@@ -1,12 +1,12 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
+from app.models.transaction import TransactionType, TransactionStatus
 
 
 class TransactionBase(BaseModel):
     amount: Decimal
-    description: Optional[str] = None
+    transaction_type: TransactionType
 
 
 class TransactionCreate(TransactionBase):
@@ -16,5 +16,6 @@ class TransactionCreate(TransactionBase):
 class TransactionResponse(TransactionBase):
     id: int
     wallet_id: int
+    status: TransactionStatus
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
