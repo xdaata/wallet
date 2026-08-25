@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,6 +55,7 @@ async def get_wallet(wallet_id: int, db: AsyncSession = Depends(get_db)):
 async def deposit_funds(
         wallet_id: int,
         amount: Decimal,
+        x_idempotency_key: str = Header(..., description="Уникальный ключ идемпотентности"),
         db: AsyncSession = Depends(get_db)
 ):
     service = WalletService(db)

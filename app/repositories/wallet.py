@@ -16,8 +16,11 @@ class WalletRepository:
         await self.session.refresh(wallet)
         return wallet
 
-    async def get_by_id(self, wallet_id: int) -> Optional[Wallet]:
-        result = await self.session.execute(select(Wallet).where(Wallet.id == wallet_id))
+    async def get_by_id(self, wallet_id: int, lock: bool = False) -> Optional[Wallet]:
+        query = select(Wallet).where(Wallet.id == wallet_id)
+        if lock:
+            query = query.with_for_update()
+        result = await self.session.execute(query)
         return result.scalars().first()
 
     async def get_user_wallets(self, user_id: int) -> List[Wallet]:

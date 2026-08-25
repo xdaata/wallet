@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.models.transaction import Transaction, TransactionType, TransactionStatus
-
+from decimal import Decimal
 
 class TransactionRepository:
     def __init__(self, session: AsyncSession):
