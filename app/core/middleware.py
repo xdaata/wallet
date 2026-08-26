@@ -40,6 +40,6 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 "body": body_bytes.decode('utf-8')
             })
 
-            await redis_client.setex(redis_key, 86400, cache_data)
+            await redis_client.set(redis_key, cache_data, ex=86400)
 
         return response
