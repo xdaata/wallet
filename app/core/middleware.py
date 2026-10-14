@@ -1,3 +1,4 @@
+import hashlib
 import json
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -15,7 +16,11 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         if not idempotency_key or request.method in ["GET", "OPTIONS"]:
             return await call_next(request)
 
-        redis_key = f"idempotency:{request.method}:{request.url.path}:{idempotency_key}"
+        # сумма и ids лежат в query, поэтому они часть ключа
+        query_hash = hashlib.sha256(request.url.query.encode()).hexdigest()[:16]
+        redis_key = (
+            f"idempotency:{request.method}:{request.url.path}:{query_hash}:{idempotency_key}"
+        )
 
         cached_response = await redis_client.get(redis_key)
 
