@@ -1,7 +1,6 @@
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
-
 from app.models.transaction import Transaction, TransactionType, TransactionStatus
 from app.repositories.wallet import WalletRepository
 from app.repositories.transaction import TransactionRepository
@@ -54,25 +53,21 @@ class WalletService:
                     detail="Кошелек не найден"
                 )
 
-            if wallet.balance < amount:
-                await self.tx_repo.create(
-                    wallet_id=wallet.id,
-                    amount=amount,
-                    transaction_type=TransactionType.WITHDRAW,
-                    status=TransactionStatus.FAILED
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Недостаточно средств на балансе"
-                )
-
-            wallet.balance -= amount
+            enough = wallet.balance >= amount
+            if enough:
+                wallet.balance -= amount
 
             tx = await self.tx_repo.create(
                 wallet_id=wallet.id,
                 amount=amount,
                 transaction_type=TransactionType.WITHDRAW,
-                status=TransactionStatus.COMPLETED
+                status=TransactionStatus.COMPLETED if enough else TransactionStatus.FAILED
+            )
+
+        if not enough:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Недостаточно средств на балансе"
             )
 
         return tx
@@ -96,8 +91,9 @@ class WalletService:
             first_wallet = await self.wallet_repo.get_by_id(first_id, lock=True)
             second_wallet = await self.wallet_repo.get_by_id(second_id, lock=True)
 
-            sender = first_wallet if first_wallet and first_wallet.id == from_wallet_id else second_wallet
-            receiver = second_wallet if second_wallet and second_wallet.id == to_wallet_id else first_wallet
+            wallets = {w.id: w for w in (first_wallet, second_wallet) if w}
+            sender = wallets.get(from_wallet_id)
+            receiver = wallets.get(to_wallet_id)
 
             if not sender or not receiver:
                 raise HTTPException(
@@ -105,26 +101,22 @@ class WalletService:
                     detail="Один из кошельков не найден"
                 )
 
-            if sender.balance < amount:
-                await self.tx_repo.create(
-                    wallet_id=sender.id,
-                    amount=amount,
-                    transaction_type=TransactionType.TRANSFER,
-                    status=TransactionStatus.FAILED
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Недостаточно средств для перевода"
-                )
-
-            sender.balance -= amount
-            receiver.balance += amount
+            enough = sender.balance >= amount
+            if enough:
+                sender.balance -= amount
+                receiver.balance += amount
 
             tx = await self.tx_repo.create(
                 wallet_id=sender.id,
                 amount=amount,
                 transaction_type=TransactionType.TRANSFER,
-                status=TransactionStatus.COMPLETED
+                status=TransactionStatus.COMPLETED if enough else TransactionStatus.FAILED
+            )
+
+        if not enough:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Недостаточно средств для перевода"
             )
 
         return tx
