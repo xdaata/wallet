@@ -17,6 +17,19 @@ Python 3.14, FastAPI, PostgreSQL, Async SQLAlchemy, Alembic, Redis, Docker, Pyte
 docker-compose up --build -d
 ```
 
+Миграции Alembic применяются автоматически при старте контейнера `web`.
+Вручную: `docker-compose exec web alembic upgrade head`.
+
+## Тесты
+
+```bash
+pip install -r requirements.txt
+pytest
+```
+
+Тест `tests/test_wallet.py` ходит в настоящую БД: перед ним нужно
+`docker-compose up -d db redis` и `alembic upgrade head`. Остальные тесты идут на SQLite в памяти.
+
 ## Остановка
 
 Остановить контейнеры:
