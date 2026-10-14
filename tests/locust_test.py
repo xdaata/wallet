@@ -15,7 +15,7 @@ class WalletUser(HttpUser):
             f"/wallets/?user_id={self.user_id}",
             json={"currency": "RUB"}
         )
-        if response.status_code == 200:
+        if response.status_code == 201:
             self.wallet_id = response.json().get("id")
         else:
             self.wallet_id = 1
