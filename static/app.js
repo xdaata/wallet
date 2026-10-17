@@ -101,7 +101,14 @@ async function withdraw() {
     if (!amount || amount <= 0) return alert('Укажите сумму больше 0');
     if (amount > MAX_ALLOWED_AMOUNT) return alert('Слишком большая сумма');
 
-    const result = await sendApiRequest(`/wallets/${walletId}/withdraw?amount=${amount}`, 'POST');
+    const idempotencyKey = crypto.randomUUID();
+
+    const result = await sendApiRequest(
+        `/wallets/${walletId}/withdraw?amount=${amount}`,
+        'POST',
+        null,
+        {'X-Idempotency-Key': idempotencyKey}
+    );
     if (result.ok) {
         getWallet();
     }
@@ -118,8 +125,14 @@ async function transfer() {
     if (!amount || amount <= 0) return alert('Укажите сумму больше 0');
     if (amount > MAX_ALLOWED_AMOUNT) return alert('Слишком большая сумма');
 
+    const idempotencyKey = crypto.randomUUID();
     const url = `/wallets/transfer?from_wallet_id=${fromId}&to_wallet_id=${toId}&amount=${amount}`;
-    const result = await sendApiRequest(url, 'POST');
+    const result = await sendApiRequest(
+        url,
+        'POST',
+        null,
+        {'X-Idempotency-Key': idempotencyKey}
+    );
 
     if (result.ok) {
         document.getElementById('actionWalletId').value = fromId;

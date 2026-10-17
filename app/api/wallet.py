@@ -1,7 +1,6 @@
 from decimal import Decimal
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Header
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -9,8 +8,7 @@ from app.models.user import User
 from app.schemas.transaction import TransactionResponse
 from app.schemas.wallet import WalletCreate, WalletResponse
 from app.services.wallet import WalletService
-from app.repositories.wallet import WalletRepository
-from app.repositories.transaction import TransactionRepository
+from app.repositories import UserRepository, WalletRepository, TransactionRepository
 
 router = APIRouter(prefix="/wallets", tags=["Wallets"])
 
@@ -21,8 +19,8 @@ async def create_wallet(
         wallet_in: WalletCreate,
         db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
+    user_repo = UserRepository(db)
+    user = await user_repo.get_by_id(user_id)
 
     if not user:
         user = User(
@@ -31,7 +29,7 @@ async def create_wallet(
             hashed_password="fake_password"
         )
         db.add(user)
-        await db.commit()
+        await db.flush()
 
     repo = WalletRepository(db)
     wallet = await repo.create(user_id=user_id, wallet_in=wallet_in)
@@ -66,6 +64,7 @@ async def deposit_funds(
 async def withdraw_funds(
         wallet_id: int,
         amount: Decimal,
+        x_idempotency_key: str = Header(..., description="Уникальный ключ идемпотентности"),
         db: AsyncSession = Depends(get_db)
 ):
     service = WalletService(db)
@@ -77,6 +76,7 @@ async def transfer_funds(
         from_wallet_id: int,
         to_wallet_id: int,
         amount: Decimal,
+        x_idempotency_key: str = Header(..., description="Уникальный ключ идемпотентности"),
         db: AsyncSession = Depends(get_db)
 ):
     service = WalletService(db)
