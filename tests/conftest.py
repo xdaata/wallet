@@ -15,10 +15,10 @@ class FakeRedis:
     def __init__(self):
         self.store: dict[str, str] = {}
 
-    async def get(self, key: str):
+    async def get(self, key):
         return self.store.get(key)
 
-    async def set(self, key: str, value: str, ex: int | None = None):
+    async def set(self, key, value, ex=None):
         self.store[key] = value
 
     async def aclose(self):

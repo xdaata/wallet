@@ -22,7 +22,6 @@ async def test_create_wallet_success(client: AsyncClient):
 )
 @pytest.mark.asyncio
 async def test_create_wallet_real_db():
-    """Интеграционный тест: выполняется против реальной БД при RUN_INTEGRATION_TESTS=1."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/wallets/?user_id=9999", json={"currency": "RUB"})
 

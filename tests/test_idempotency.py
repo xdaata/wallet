@@ -66,16 +66,16 @@ async def test_error_responses_are_not_cached(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_mutating_endpoints_require_idempotency_key(client: AsyncClient):
     wallet_id = await _create_wallet(client)
-    # deposit without header -> 422
+
     res_dep = await client.post(f"/wallets/{wallet_id}/deposit?amount=50.00")
     assert res_dep.status_code == 422
 
-    # withdraw without header -> 422
     res_w = await client.post(f"/wallets/{wallet_id}/withdraw?amount=50.00")
     assert res_w.status_code == 422
 
-    # transfer without header -> 422
-    res_tr = await client.post(f"/wallets/transfer?from_wallet_id={wallet_id}&to_wallet_id={wallet_id}&amount=50.00")
+    res_tr = await client.post(
+        f"/wallets/transfer?from_wallet_id={wallet_id}&to_wallet_id={wallet_id}&amount=50.00"
+    )
     assert res_tr.status_code == 422
 
 
