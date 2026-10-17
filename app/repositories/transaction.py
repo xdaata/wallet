@@ -1,8 +1,9 @@
 from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from app.models.transaction import Transaction, TransactionType, TransactionStatus
 from decimal import Decimal
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.transaction import Transaction, TransactionType, TransactionStatus
+
 
 class TransactionRepository:
     def __init__(self, session: AsyncSession):
@@ -27,8 +28,12 @@ class TransactionRepository:
 
     async def get_by_id(self, transaction_id: int) -> Optional[Transaction]:
         result = await self.session.execute(select(Transaction).where(Transaction.id == transaction_id))
-        return result.scalars().first()
+        return result.scalar_one_or_none()
 
     async def get_wallet_transactions(self, wallet_id: int) -> List[Transaction]:
-        result = await self.session.execute(select(Transaction).where(Transaction.wallet_id == wallet_id))
+        result = await self.session.execute(
+            select(Transaction)
+            .where(Transaction.wallet_id == wallet_id)
+            .order_by(Transaction.created_at.desc(), Transaction.id.desc())
+        )
         return list(result.scalars().all())
