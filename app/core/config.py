@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "wallet_db"
     REDIS_URL: str = "redis://localhost:6379/0"
+    DB_ECHO: bool = False
 
     @property
     def database_url(self) -> str:
