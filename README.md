@@ -27,8 +27,7 @@ pip install -r requirements.txt
 pytest
 ```
 
-Тест `tests/test_wallet.py` ходит в настоящую БД: перед ним нужно
-`docker-compose up -d db redis` и `alembic upgrade head`. Остальные тесты идут на SQLite в памяти.
+Все тесты изолированы и выполняются на SQLite в памяти (aiosqlite), внешний запуск БД и Redis для прогона pytest не требуется.
 
 ## Остановка
 
