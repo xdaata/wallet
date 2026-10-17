@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
@@ -8,6 +9,20 @@ from app.core.database import Base, get_db
 from app.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+class FakeRedis:
+    def __init__(self):
+        self.store: dict[str, str] = {}
+
+    async def get(self, key: str):
+        return self.store.get(key)
+
+    async def set(self, key: str, value: str, ex: int | None = None):
+        self.store[key] = value
+
+    async def aclose(self):
+        pass
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -43,8 +58,9 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
+    with patch("app.core.middleware.redis_client", FakeRedis()):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            yield ac
 
     app.dependency_overrides.clear()
     await engine.dispose()

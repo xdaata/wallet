@@ -16,12 +16,13 @@ async def test_create_wallet_success(client: AsyncClient):
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(
+    not os.getenv("RUN_INTEGRATION_TESTS"),
+    reason="Интеграционный тест требует RUN_INTEGRATION_TESTS=1 и запущенного PostgreSQL",
+)
 @pytest.mark.asyncio
 async def test_create_wallet_real_db():
     """Интеграционный тест: выполняется против реальной БД при RUN_INTEGRATION_TESTS=1."""
-    if not os.getenv("RUN_INTEGRATION_TESTS"):
-        pytest.skip("Интеграционный тест пропущен (требуется RUN_INTEGRATION_TESTS=1 и запущенный PostgreSQL)")
-
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/wallets/?user_id=9999", json={"currency": "RUB"})
 

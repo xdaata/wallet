@@ -1,50 +1,8 @@
 import uuid
 from decimal import Decimal
-from unittest.mock import patch
 
 import pytest
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-import app.models  # noqa: F401  (регистрирует таблицы в Base.metadata)
-from app.core.database import Base, get_db
-from app.main import app
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-
-class FakeRedis:
-    def __init__(self):
-        self.store: dict[str, str] = {}
-
-    async def get(self, key):
-        return self.store.get(key)
-
-    async def set(self, key, value, ex=None):
-        self.store[key] = value
-
-
-@pytest_asyncio.fixture
-async def client():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-    async def _override_get_db():
-        async with session_maker() as session:
-            yield session
-
-    app.dependency_overrides[get_db] = _override_get_db
-
-    with patch("app.core.middleware.redis_client", FakeRedis()):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            yield ac
-
-    app.dependency_overrides.clear()
-    await engine.dispose()
+from httpx import AsyncClient
 
 
 async def _create_wallet(client: AsyncClient) -> int:
